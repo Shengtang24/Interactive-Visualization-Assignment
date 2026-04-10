@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Visualization Assignment</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #333;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a237e, #283593);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      opacity: 0.85;
+      font-size: 1rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      background: #283593;
+      padding: 0.6rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    nav button {
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.6);
+      color: white;
+      padding: 0.4rem 1.2rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    nav button:hover,
+    nav button.active {
+      background: white;
+      color: #1a237e;
+      border-color: white;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.visible {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 1.4rem;
+      color: #1a237e;
+      margin-bottom: 0.4rem;
+    }
+
+    .card p.desc {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      overflow: visible;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: rgba(26,35,126,0.92);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+
+    .axis path,
+    .axis line {
+      stroke: #ccc;
+    }
+
+    .axis text {
+      fill: #555;
+      font-size: 0.78rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .controls label {
+      font-size: 0.88rem;
+      color: #444;
+    }
+
+    .controls select,
+    .controls input[type="range"] {
+      font-size: 0.88rem;
+      padding: 0.3rem 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .legend {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-top: 0.8rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      color: #555;
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      color: #888;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Interactive Visualization Assignment</h1>
+  <p>Explore data through interactive charts</p>
+</header>
+
+<nav id="nav">
+  <button class="active" data-section="bar">Bar Chart</button>
+  <button data-section="line">Line Chart</button>
+  <button data-section="scatter">Scatter Plot</button>
+  <button data-section="pie">Pie Chart</button>
+</nav>
+
+<main>
+
+  <!-- ===== BAR CHART ===== -->
+  <div id="bar" class="section visible">
+    <div class="card">
+      <h2>Monthly Sales by Category</h2>
+      <p class="desc">Hover over bars for details. Use the dropdown to switch between categories.</p>
+      <div class="controls">
+        <label>Category:
+          <select id="barCategory">
+            <option value="Electronics">Electronics</option>
+            <option value="Clothing">Clothing</option>
+            <option value="Food">Food</option>
+          </select>
+        </label>
+      </div>
+      <svg id="barChart"></svg>
+      <div class="legend" id="barLegend"></div>
+    </div>
+  </div>
+
+  <!-- ===== LINE CHART ===== -->
+  <div id="line" class="section">
+    <div class="card">
+      <h2>Annual Temperature Trend (2015–2024)</h2>
+      <p class="desc">Hover over data points to see exact values. Toggle cities using the buttons.</p>
+      <div class="controls" id="lineToggles"></div>
+      <svg id="lineChart"></svg>
+      <div class="legend" id="lineLegend"></div>
+    </div>
+  </div>
+
+  <!-- ===== SCATTER PLOT ===== -->
+  <div id="scatter" class="section">
+    <div class="card">
+      <h2>GDP vs. Life Expectancy</h2>
+      <p class="desc">Each circle represents a country. Circle size indicates population. Hover for details.</p>
+      <div class="controls">
+        <label>Point size scale:
+          <input type="range" id="scatterSize" min="1" max="5" step="0.5" value="2.5" />
+        </label>
+      </div>
+      <svg id="scatterChart"></svg>
+      <div class="legend" id="scatterLegend"></div>
+    </div>
+  </div>
+
+  <!-- ===== PIE CHART ===== -->
+  <div id="pie" class="section">
+    <div class="card">
+      <h2>Energy Source Distribution</h2>
+      <p class="desc">Click a slice to highlight it. Hover for percentage details.</p>
+      <svg id="pieChart"></svg>
+      <div class="legend" id="pieLegend"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<footer>
+  Interactive Visualization Assignment &mdash; Built with D3.js v7
+</footer>
+
+<script>
+// ─── Tooltip helper ────────────────────────────────────────────────────────
+const tooltip = d3.select('#tooltip');
+
+function showTip(html, event) {
+  tooltip.html(html).style('opacity', 1);
+  moveTip(event);
+}
+
+function moveTip(event) {
+  tooltip
+    .style('left', (event.pageX + 14) + 'px')
+    .style('top',  (event.pageY - 28) + 'px');
+}
+
+function hideTip() {
+  tooltip.style('opacity', 0);
+}
+
+// ─── Navigation ────────────────────────────────────────────────────────────
+document.querySelectorAll('#nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+    document.getElementById(btn.dataset.section).classList.add('visible');
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 1. BAR CHART
+// ══════════════════════════════════════════════════════════════════════════════
+const barData = {
+  Electronics: [
+    { month: 'Jan', sales: 420 }, { month: 'Feb', sales: 380 },
+    { month: 'Mar', sales: 510 }, { month: 'Apr', sales: 470 },
+    { month: 'May', sales: 560 }, { month: 'Jun', sales: 620 },
+    { month: 'Jul', sales: 590 }, { month: 'Aug', sales: 650 },
+    { month: 'Sep', sales: 700 }, { month: 'Oct', sales: 680 },
+    { month: 'Nov', sales: 750 }, { month: 'Dec', sales: 830 },
+  ],
+  Clothing: [
+    { month: 'Jan', sales: 310 }, { month: 'Feb', sales: 280 },
+    { month: 'Mar', sales: 340 }, { month: 'Apr', sales: 390 },
+    { month: 'May', sales: 430 }, { month: 'Jun', sales: 400 },
+    { month: 'Jul', sales: 370 }, { month: 'Aug', sales: 360 },
+    { month: 'Sep', sales: 410 }, { month: 'Oct', sales: 480 },
+    { month: 'Nov', sales: 520 }, { month: 'Dec', sales: 610 },
+  ],
+  Food: [
+    { month: 'Jan', sales: 530 }, { month: 'Feb', sales: 490 },
+    { month: 'Mar', sales: 570 }, { month: 'Apr', sales: 600 },
+    { month: 'May', sales: 650 }, { month: 'Jun', sales: 680 },
+    { month: 'Jul', sales: 720 }, { month: 'Aug', sales: 700 },
+    { month: 'Sep', sales: 660 }, { month: 'Oct', sales: 640 },
+    { month: 'Nov', sales: 690 }, { month: 'Dec', sales: 750 },
+  ],
+};
+
+const barColors = { Electronics: '#3f51b5', Clothing: '#e91e63', Food: '#4caf50' };
+
+function drawBar(category) {
+  const data = barData[category];
+  const color = barColors[category];
+  const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+  const totalW = document.getElementById('barChart').parentElement.clientWidth - 64;
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select('#barChart').selectAll('*').remove();
+
+  const svg = d3.select('#barChart')
+    .attr('height', H + margin.top + margin.bottom + 20)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleBand().domain(data.map(d => d.month)).range([0, W]).padding(0.35);
+  const y = d3.scaleLinear().domain([0, d3.max(data, d => d.sales) * 1.1]).range([H, 0]);
+
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H})`).call(d3.axisBottom(x));
+  svg.append('g').attr('class', 'axis').call(d3.axisLeft(y).ticks(6).tickFormat(d => '$' + d));
+
+  svg.append('text').attr('x', W / 2).attr('y', H + 36).attr('text-anchor', 'middle')
+    .attr('fill', '#888').attr('font-size', '0.78rem').text('Month');
+  svg.append('text').attr('transform', 'rotate(-90)').attr('x', -H / 2).attr('y', -50)
+    .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '0.78rem').text('Sales (USD)');
+
+  // Gridlines
+  svg.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(6).tickSize(-W).tickFormat(''))
+    .selectAll('line').attr('stroke', '#eee');
+
+  svg.selectAll('.bar')
+    .data(data)
+    .join('rect')
+    .attr('class', 'bar')
+    .attr('x', d => x(d.month))
+    .attr('width', x.bandwidth())
+    .attr('y', H)
+    .attr('height', 0)
+    .attr('rx', 4)
+    .attr('fill', color)
+    .on('mouseover', (event, d) => showTip(`<strong>${d.month}</strong><br/>Sales: $${d.sales}`, event))
+    .on('mousemove', moveTip)
+    .on('mouseout', hideTip)
+    .transition().duration(600).ease(d3.easeCubicOut)
+    .attr('y', d => y(d.sales))
+    .attr('height', d => H - y(d.sales));
+}
+
+document.getElementById('barCategory').addEventListener('change', e => drawBar(e.target.value));
+drawBar('Electronics');
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 2. LINE CHART
+// ══════════════════════════════════════════════════════════════════════════════
+const lineData = {
+  Beijing:  [12.2, 13.0, 12.8, 13.5, 14.1, 13.9, 14.5, 15.0, 14.8, 15.3],
+  Shanghai: [15.8, 16.2, 16.0, 16.8, 17.2, 17.0, 17.5, 18.1, 17.9, 18.4],
+  Guangzhou:[21.5, 21.8, 22.0, 22.4, 22.7, 22.5, 23.0, 23.3, 23.1, 23.5],
+};
+const years = d3.range(2015, 2025);
+const lineColors = { Beijing: '#3f51b5', Shanghai: '#e91e63', Guangzhou: '#ff9800' };
+const cityVisible = { Beijing: true, Shanghai: true, Guangzhou: true };
+
+function drawLine() {
+  const margin = { top: 20, right: 30, bottom: 40, left: 60 };
+  const totalW = document.getElementById('lineChart').parentElement.clientWidth - 64;
+  const W = totalW - margin.left - margin.right;
+  const H = 320 - margin.top - margin.bottom;
+
+  d3.select('#lineChart').selectAll('*').remove();
+
+  const svg = d3.select('#lineChart')
+    .attr('height', H + margin.top + margin.bottom + 20)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const allTemps = Object.entries(lineData)
+    .filter(([city]) => cityVisible[city])
+    .flatMap(([, temps]) => temps);
+
+  const x = d3.scaleLinear().domain([2015, 2024]).range([0, W]);
+  const y = d3.scaleLinear()
+    .domain([d3.min(allTemps) - 1, d3.max(allTemps) + 1])
+    .range([H, 0]);
+
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H})`)
+    .call(d3.axisBottom(x).ticks(10).tickFormat(d3.format('d')));
+  svg.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(6).tickFormat(d => d + '°C'));
+
+  svg.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(6).tickSize(-W).tickFormat(''))
+    .selectAll('line').attr('stroke', '#eee');
+
+  svg.append('text').attr('x', W / 2).attr('y', H + 36).attr('text-anchor', 'middle')
+    .attr('fill', '#888').attr('font-size', '0.78rem').text('Year');
+  svg.append('text').attr('transform', 'rotate(-90)').attr('x', -H / 2).attr('y', -50)
+    .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '0.78rem').text('Avg. Temp (°C)');
+
+  const lineGen = d3.line().x((d, i) => x(years[i])).y(d => y(d)).curve(d3.curveMonotoneX);
+
+  Object.entries(lineData).forEach(([city, temps]) => {
+    if (!cityVisible[city]) return;
+    const col = lineColors[city];
+    const path = svg.append('path')
+      .datum(temps)
+      .attr('fill', 'none')
+      .attr('stroke', col)
+      .attr('stroke-width', 2.5)
+      .attr('d', lineGen);
+
+    const totalLen = path.node().getTotalLength();
+    path.attr('stroke-dasharray', totalLen)
+      .attr('stroke-dashoffset', totalLen)
+      .transition().duration(800).attr('stroke-dashoffset', 0);
+
+    svg.selectAll(`.dot-${city}`)
+      .data(temps)
+      .join('circle')
+      .attr('class', `dot-${city}`)
+      .attr('cx', (d, i) => x(years[i]))
+      .attr('cy', d => y(d))
+      .attr('r', 5)
+      .attr('fill', col)
+      .on('mouseover', (event, d) => {
+        const i = temps.indexOf(d);
+        showTip(`<strong>${city}</strong><br/>Year: ${years[i]}<br/>Temp: ${d}°C`, event);
+      })
+      .on('mousemove', moveTip)
+      .on('mouseout', hideTip);
+  });
+}
+
+// City toggle buttons
+const lineToggles = document.getElementById('lineToggles');
+Object.keys(lineData).forEach(city => {
+  const btn = document.createElement('button');
+  btn.textContent = city;
+  btn.style.cssText = `background:${lineColors[city]};color:white;border:none;padding:0.3rem 0.9rem;border-radius:16px;cursor:pointer;font-size:0.85rem;opacity:1;transition:opacity 0.2s;`;
+  btn.addEventListener('click', () => {
+    cityVisible[city] = !cityVisible[city];
+    btn.style.opacity = cityVisible[city] ? '1' : '0.3';
+    drawLine();
+  });
+  lineToggles.appendChild(btn);
+});
+
+drawLine();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 3. SCATTER PLOT
+// ══════════════════════════════════════════════════════════════════════════════
+const scatterData = [
+  { country: 'China',         gdp: 12556, life: 76.9, pop: 1400, region: 'Asia' },
+  { country: 'India',         gdp:  2101, life: 69.7, pop: 1380, region: 'Asia' },
+  { country: 'USA',           gdp: 63544, life: 78.9, pop:  331, region: 'Americas' },
+  { country: 'Brazil',        gdp:  7011, life: 75.9, pop:  213, region: 'Americas' },
+  { country: 'Germany',       gdp: 46468, life: 81.3, pop:   83, region: 'Europe' },
+  { country: 'France',        gdp: 43519, life: 82.5, pop:   67, region: 'Europe' },
+  { country: 'UK',            gdp: 40285, life: 81.2, pop:   68, region: 'Europe' },
+  { country: 'Japan',         gdp: 40113, life: 84.3, pop:  125, region: 'Asia' },
+  { country: 'South Korea',   gdp: 31762, life: 83.0, pop:   52, region: 'Asia' },
+  { country: 'Canada',        gdp: 43242, life: 82.3, pop:   38, region: 'Americas' },
+  { country: 'Australia',     gdp: 55058, life: 83.4, pop:   26, region: 'Oceania' },
+  { country: 'Nigeria',       gdp:  2097, life: 55.2, pop:  218, region: 'Africa' },
+  { country: 'South Africa',  gdp:  5091, life: 64.1, pop:   60, region: 'Africa' },
+  { country: 'Mexico',        gdp:  9946, life: 75.1, pop:  130, region: 'Americas' },
+  { country: 'Argentina',     gdp:  9124, life: 76.7, pop:   46, region: 'Americas' },
+  { country: 'Turkey',        gdp: 11555, life: 78.6, pop:   84, region: 'Europe' },
+  { country: 'Saudi Arabia',  gdp: 23140, life: 75.5, pop:   35, region: 'Asia' },
+  { country: 'Indonesia',     gdp:  4292, life: 71.7, pop:  274, region: 'Asia' },
+  { country: 'Pakistan',      gdp:  1193, life: 67.3, pop:  221, region: 'Asia' },
+  { country: 'Bangladesh',    gdp:  1888, life: 72.6, pop:  170, region: 'Asia' },
+];
+
+const regionColors = { Asia: '#3f51b5', Europe: '#e91e63', Americas: '#4caf50', Africa: '#ff9800', Oceania: '#9c27b0' };
+
+function drawScatter(sizeScale) {
+  const margin = { top: 20, right: 30, bottom: 50, left: 70 };
+  const totalW = document.getElementById('scatterChart').parentElement.clientWidth - 64;
+  const W = totalW - margin.left - margin.right;
+  const H = 380 - margin.top - margin.bottom;
+
+  d3.select('#scatterChart').selectAll('*').remove();
+
+  const svg = d3.select('#scatterChart')
+    .attr('height', H + margin.top + margin.bottom + 20)
+    .append('g')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
+
+  const x = d3.scaleLinear().domain([0, 70000]).range([0, W]);
+  const y = d3.scaleLinear().domain([50, 90]).range([H, 0]);
+  const r = d3.scaleSqrt().domain([0, 1400]).range([0, 32 * sizeScale]);
+
+  svg.append('g').attr('class', 'axis').attr('transform', `translate(0,${H})`)
+    .call(d3.axisBottom(x).ticks(7).tickFormat(d => '$' + (d / 1000) + 'k'));
+  svg.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(8).tickFormat(d => d + ' yr'));
+
+  svg.append('g').attr('class', 'axis')
+    .call(d3.axisLeft(y).ticks(8).tickSize(-W).tickFormat(''))
+    .selectAll('line').attr('stroke', '#eee');
+
+  svg.append('text').attr('x', W / 2).attr('y', H + 42).attr('text-anchor', 'middle')
+    .attr('fill', '#888').attr('font-size', '0.78rem').text('GDP per Capita (USD)');
+  svg.append('text').attr('transform', 'rotate(-90)').attr('x', -H / 2).attr('y', -58)
+    .attr('text-anchor', 'middle').attr('fill', '#888').attr('font-size', '0.78rem').text('Life Expectancy (years)');
+
+  svg.selectAll('.dot')
+    .data(scatterData)
+    .join('circle')
+    .attr('class', 'dot')
+    .attr('cx', d => x(d.gdp))
+    .attr('cy', d => y(d.life))
+    .attr('r', d => Math.max(4, r(d.pop)))
+    .attr('fill', d => regionColors[d.region])
+    .attr('fill-opacity', 0.7)
+    .attr('stroke', d => regionColors[d.region])
+    .attr('stroke-width', 1.5)
+    .on('mouseover', (event, d) => showTip(
+      `<strong>${d.country}</strong> (${d.region})<br/>GDP: $${d.gdp.toLocaleString()}<br/>Life Exp: ${d.life} yr<br/>Pop: ${d.pop}M`,
+      event
+    ))
+    .on('mousemove', moveTip)
+    .on('mouseout', hideTip);
+
+  // Legend
+  const lg = d3.select('#scatterLegend');
+  lg.selectAll('*').remove();
+  Object.entries(regionColors).forEach(([region, col]) => {
+    const item = lg.append('div').attr('class', 'legend-item');
+    item.append('div').attr('class', 'legend-color').style('background', col);
+    item.append('span').text(region);
+  });
+}
+
+document.getElementById('scatterSize').addEventListener('input', e => drawScatter(+e.target.value));
+drawScatter(2.5);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 4. PIE CHART
+// ══════════════════════════════════════════════════════════════════════════════
+const pieData = [
+  { label: 'Coal',        value: 27 },
+  { label: 'Oil',         value: 31 },
+  { label: 'Natural Gas', value: 23 },
+  { label: 'Hydro',       value:  7 },
+  { label: 'Nuclear',     value:  5 },
+  { label: 'Wind',        value:  4 },
+  { label: 'Solar',       value:  3 },
+];
+
+const pieColors = ['#546e7a', '#78909c', '#90a4ae', '#4caf50', '#ff9800', '#3f51b5', '#e91e63'];
+
+(function drawPie() {
+  const W = Math.min(document.getElementById('pieChart').parentElement.clientWidth - 64, 520);
+  const H = 360;
+  const radius = Math.min(W, H) / 2 - 20;
+
+  d3.select('#pieChart').selectAll('*').remove();
+  d3.select('#pieChart')
+    .attr('height', H)
+    .attr('viewBox', `0 0 ${W} ${H}`);
+
+  const svg = d3.select('#pieChart')
+    .append('g')
+    .attr('transform', `translate(${W / 2}, ${H / 2})`);
+
+  const pie = d3.pie().value(d => d.value).sort(null);
+  const arc = d3.arc().innerRadius(radius * 0.45).outerRadius(radius);
+  const arcHover = d3.arc().innerRadius(radius * 0.45).outerRadius(radius + 10);
+
+  const slices = svg.selectAll('.slice')
+    .data(pie(pieData))
+    .join('path')
+    .attr('class', 'slice')
+    .attr('fill', (d, i) => pieColors[i])
+    .attr('stroke', 'white')
+    .attr('stroke-width', 2)
+    .attr('d', arc)
+    .on('mouseover', function(event, d) {
+      d3.select(this).attr('d', arcHover);
+      showTip(`<strong>${d.data.label}</strong><br/>${d.data.value}%`, event);
+    })
+    .on('mousemove', moveTip)
+    .on('mouseout', function() {
+      d3.select(this).attr('d', arc);
+      hideTip();
+    })
+    .on('click', function(event) {
+      const isActive = d3.select(this).attr('data-active') === 'true';
+      slices.attr('d', arc).attr('data-active', 'false').attr('fill-opacity', 1);
+      if (!isActive) {
+        d3.select(this).attr('d', arcHover).attr('data-active', 'true');
+        slices.filter(function() { return this !== event.target; }).attr('fill-opacity', 0.4);
+      }
+    });
+
+  // Animate entry
+  slices.each(function(d) {
+    const el = d3.select(this);
+    const start = { startAngle: d.startAngle, endAngle: d.startAngle };
+    el.attr('d', arc(start))
+      .transition().duration(700).ease(d3.easeCubicOut)
+      .attrTween('d', () => {
+        const interp = d3.interpolate(start, d);
+        return t => arc(interp(t));
+      });
+  });
+
+  // Center label
+  svg.append('text').attr('text-anchor', 'middle').attr('dy', '-0.2em')
+    .attr('font-size', '1.1rem').attr('fill', '#444').text('Energy');
+  svg.append('text').attr('text-anchor', 'middle').attr('dy', '1.1em')
+    .attr('font-size', '1.1rem').attr('fill', '#444').text('Mix');
+
+  // Legend
+  const lg = d3.select('#pieLegend');
+  lg.selectAll('*').remove();
+  pieData.forEach((d, i) => {
+    const item = lg.append('div').attr('class', 'legend-item');
+    item.append('div').attr('class', 'legend-color').style('background', pieColors[i]);
+    item.append('span').text(`${d.label} (${d.value}%)`);
+  });
+})();
+</script>
+</body>
+</html>
