@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>说明文档｜全球温室气体排放趋势探索器</title>
+    <style>
+      :root{
+        --bg:#0b1020; --text:rgba(255,255,255,.92); --muted:rgba(255,255,255,.65);
+        --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.12); --accent:#8dd3ff;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      }
+      body{ margin:0; font-family:var(--sans); color:var(--text); background: var(--bg); }
+      .wrap{ max-width: 980px; margin: 0 auto; padding: 26px 18px 40px; }
+      h1{ font-size: 22px; margin: 0 0 8px; }
+      h2{ font-size: 16px; margin: 22px 0 10px; }
+      p, li{ color: rgba(255,255,255,.82); line-height: 1.75; font-size: 14px; }
+      a{ color: var(--accent); text-decoration: none; }
+      .card{
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px 14px;
+        margin: 12px 0;
+      }
+      code{ font-family: var(--mono); font-size: 13px; color: rgba(255,255,255,.9); }
+      .muted{ color: var(--muted); }
+      .pill{ display:inline-block; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,.04); margin-right: 8px; font-size: 12px; color: rgba(255,255,255,.78); }
+      .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="muted">
+        <span class="pill">独立说明页</span>
+        <a href="../index.html">返回主页面</a>
+      </div>
+      <h1>全球温室气体排放趋势探索器｜说明文档</h1>
+      <p class="muted">目标：用交互式探索回答“自1990年以来，不同国家的排放如何变化？谁在显著减排，谁在持续增长？”并支持用户发现拐点、比较政策前后差异。</p>
+
+      <h2>1. 可视化目标（回答的问题）</h2>
+      <div class="card">
+        <ul>
+          <li><b>主问题</b>：自1990年以来，各国排放（你的数据字段 <code>value</code>）随时间如何变化？</li>
+          <li><b>对比</b>：用户可自由选择多个国家对比趋势形状与阶段性变化。</li>
+          <li><b>洞察</b>：在任意时间区间内，快速识别“显著减排/显著增排”的国家与变化幅度。</li>
+          <li><b>异常/拐点</b>：通过缩放、刷选与指数化视图更容易发现波动与转折。</li>
+        </ul>
+      </div>
+
+      <h2>2. 设计决策（为什么这样设计）</h2>
+      <div class="grid">
+        <div class="card">
+          <p><b>为什么是折线图</b></p>
+          <p>折线图最适合表达长期趋势、拐点与阶段性变化；支持同时比较多条国家曲线。</p>
+          <p class="muted">为避免缺失年份造成“虚假直连”，系统会在年份缺失处断线显示。</p>
+        </div>
+        <div class="card">
+          <p><b>为什么要“指数化（区间起点=100）”</b></p>
+          <p>当国家量级差异大时，原始值会掩盖小国趋势；指数化把焦点转向“增长/下降速度与形状”。</p>
+          <p class="muted">基准取刷选区间内该国的首个有效值，确保与用户当前探索区间一致。</p>
+        </div>
+        <div class="card">
+          <p><b>为什么要刷选 + 缩放（双交互）</b></p>
+          <p>刷选用于快速锁定政策前后区间；缩放/平移用于细读局部变化，避免反复拖拽刷选。</p>
+        </div>
+        <div class="card">
+          <p><b>为什么要“区间变化排行”视图</b></p>
+          <p>它直接回答“谁在显著减排/增排”，并且与主图联动：刷选区间一变，排行立刻更新。</p>
+        </div>
+      </div>
+
+      <h2>3. 多视图协调（联动机制）</h2>
+      <div class="card">
+        <ul>
+          <li><b>刷选 ↔ 主图</b>：底部缩略图刷选时间区间，主图自动更新尺度与内容。</li>
+          <li><b>缩放 ↔ 刷选</b>：在主图滚轮缩放/拖拽平移，会同步更新底部刷选窗口（避免两套时间范围“打架”）。</li>
+          <li><b>主图悬停 ↔ 排行高亮</b>：主图悬停某一年，提示框展示多国对齐值；右侧排行同步高亮这些国家，便于上下文判断。</li>
+          <li><b>排行点击 ↔ 国家选择</b>：点击右侧条形图即可增删国家，实现“从洞察反推对比对象”的探索路径。</li>
+        </ul>
+      </div>
+
+      <h2>4. 高级交互与创新元素</h2>
+      <div class="card">
+        <ul>
+          <li><b>高级交互</b>：缩放/平移（zoom）、时间刷选（brush）、悬停对齐（crosshair + 多国 tooltip）、图例隐藏/显示。</li>
+          <li><b>创新元素</b>：区间变化的<b>发散条形排行</b>（以 0 为中心），并支持点击反向选择；“指数化模式”把探索从“量级”切换到“趋势形状”。</li>
+          <li><b>关键事件标注</b>：默认标注 2005（京都议定书生效），支持一键开关。</li>
+        </ul>
+      </div>
+
+      <h2>5. 数据源与预处理说明</h2>
+      <div class="card">
+        <p>本项目直接读取你已整理好的 <code>emissions.json</code>，数据结构为：</p>
+        <p class="muted"><code>[{ "country": "...", "year": 1990, "value": 12.34 }, ...]</code></p>
+        <p>为保证可视化不误导，前端会：</p>
+        <ul>
+          <li>将每个国家扩展为“全年份序列”，缺失年份填 <code>null</code> 以产生断线。</li>
+          <li>排行计算基于刷选区间内该国<b>首末有效年份</b>（可应对国家起始年份不同、年份稀疏）。</li>
+        </ul>
+      </div>
+
+      <h2>6. 参考与启发</h2>
+      <div class="card">
+        <ul>
+          <li><b>D3 Focus + Context</b> 经典模式：主视图 + 缩略图刷选。</li>
+          <li><b>NameVoyager</b>：通过交互筛选与即时反馈形成探索节奏。</li>
+          <li><b>Zipdecode</b>：强调“从概览到细节”的多层级导航。</li>
+        </ul>
+      </div>
+
+      <h2>7. 开发流程与难点</h2>
+      <div class="card">
+        <ul>
+          <li><b>难点</b>：zoom 与 brush 的同步（避免相互触发造成抖动/循环）。</li>
+          <li><b>难点</b>：缺失年份的正确处理（断线显示 + 计算首末有效值）。</li>
+          <li><b>收获</b>：把“洞察视图（排行）”做成可交互入口，比单纯的折线图更能引导探索。</li>
+        </ul>
+      </div>
+
+      <h2>8. 未来改进</h2>
+      <div class="card">
+        <ul>
+          <li>增加“政策事件库”（可勾选多个垂直标注，支持自定义事件）。</li>
+          <li>增加“拐点检测”（例如滑动窗口斜率变化提示）。</li>
+          <li>增加人均/总量切换（若补充人口数据），形成更完整的指标视角。</li>
+        </ul>
+      </div>
+
+    </div>
+  </body>
+</html>
