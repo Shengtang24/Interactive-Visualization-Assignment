@@ -110,6 +110,34 @@ h1{
   border-color: rgba(141,211,255,.55);
   box-shadow: 0 0 0 4px rgba(141,211,255,.10);
 }
+
+/* 锚点国家下拉：浅色高对比，避免 Win/Chrome 在深色页面下 option 文字与背景撞色导致“空白列表” */
+select.input-select{
+  color-scheme: light;
+  background-color: #e8edf5;
+  color: #0b1020;
+  border: 1px solid rgba(15, 16, 32, 0.18);
+  font-size: 13px;
+  line-height: 1.35;
+  min-height: 44px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230b1020' d='M2.5 4.25L6 7.75l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+}
+select.input-select:focus{
+  border-color: rgba(11, 16, 32, 0.35);
+  box-shadow: 0 0 0 3px rgba(141, 211, 255, 0.25);
+}
+select.input-select option{
+  color: #0b1020;
+  background-color: #ffffff;
+  font-size: 13px;
+}
 .hint{
   font-size: 12px;
   color: var(--muted);
@@ -145,6 +173,26 @@ h1{
   overflow:hidden;
   background: rgba(255,255,255,.04);
 }
+.segmented--grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+}
+.segmented--grid .segmented-item{
+  border-radius: 0;
+  border-right: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  min-height: 40px;
+  font-size: 12px;
+  line-height: 1.25;
+}
+.segmented--grid .segmented-item:nth-child(2n){
+  border-right: 0;
+}
+.segmented--grid .segmented-item:nth-last-child(-n+2){
+  border-bottom: 0;
+}
 .segmented-item{
   flex:1;
   padding: 9px 10px;
@@ -176,9 +224,64 @@ h1{
 }
 
 .country-list{
-  max-height: 510px;
+  max-height: 380px;
   overflow:auto;
   padding-right: 6px;
+}
+
+.similar-results{
+  margin-top: 10px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 4px;
+}
+.similar-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.10);
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,.88);
+}
+.similar-meta{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.similar-name{
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.similar-r{
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,255,255,.62);
+}
+.btn-small{
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(141,211,255,.35);
+  background: rgba(141,211,255,.12);
+  color: rgba(255,255,255,.92);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.btn-small:hover:not(:disabled){
+  background: rgba(141,211,255,.20);
+}
+.btn-small:disabled{
+  opacity: .45;
+  cursor: default;
 }
 .country-item{
   display:flex;
@@ -260,7 +363,7 @@ h1{
   border: 1px solid rgba(255,255,255,.10);
 }
 .chart-svg--context{ height: 120px; }
-.chart-svg--rank{ height: 520px; }
+.chart-svg--rank{ height: 420px; }
 
 .tooltip{
   position:absolute;
@@ -405,14 +508,111 @@ h1{
   stroke: rgba(255,255,255,.20);
   stroke-dasharray: 3 4;
 }
-.kyoto-line{
-  stroke: rgba(141,211,255,.55);
-  stroke-dasharray: 4 4;
+/* 政策事件时间轴 */
+.policy-event-line{
+  stroke: rgba(245, 180, 90, 0.75);
+  stroke-width: 1.5px;
+  stroke-dasharray: 5 4;
+  pointer-events: none;
 }
-.kyoto-label{
-  fill: rgba(141,211,255,.85);
+.policy-event-label{
+  fill: rgba(255, 230, 190, 0.92);
   font-size: 11px;
   font-weight: 650;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.policy-event-hit{
+  fill: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  outline: none;
+}
+.policy-event-hit:focus{
+  fill: rgba(141, 211, 255, 0.12);
+}
+.context-event-tick{
+  fill: rgba(245, 180, 90, 0.85);
+  stroke: rgba(0, 0, 0, 0.25);
+  stroke-width: 0.5px;
+}
+
+/* 关注点（空心圆） */
+.attention-dot{
+  fill: none;
+  stroke-width: 2.2px;
+  pointer-events: none;
+}
+.attention-dot--anomaly{
+  stroke: rgba(255, 122, 144, 0.95);
+}
+.attention-dot--significant{
+  stroke: rgba(141, 211, 255, 0.95);
+}
+
+/* 关注点解释面板 */
+.attention-panel{
+  font-size: 12px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.attention-placeholder{
+  margin: 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 12px;
+}
+.attention-head{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.attention-badge{
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.attention-badge--anomaly{
+  color: rgba(255, 200, 210, 0.95);
+  background: rgba(255, 122, 144, 0.15);
+  border-color: rgba(255, 122, 144, 0.35);
+}
+.attention-badge--significant{
+  color: rgba(200, 235, 255, 0.95);
+  background: rgba(141, 211, 255, 0.12);
+  border-color: rgba(141, 211, 255, 0.35);
+}
+.attention-title{
+  font-weight: 700;
+  font-size: 13px;
+}
+.attention-why{
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.78);
+}
+.attention-dl{
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  font-size: 11px;
+}
+.attention-dl dt{
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+.attention-dl dd{
+  margin: 0;
+  font-family: var(--mono);
+  color: rgba(255, 255, 255, 0.88);
 }
 .brush .selection{
   fill: rgba(141,211,255,.16);

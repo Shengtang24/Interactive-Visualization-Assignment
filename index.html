@@ -35,28 +35,49 @@
 
           <div class="control">
             <div class="label">对比模式</div>
-            <div class="segmented" role="tablist" aria-label="对比模式">
+            <div class="segmented segmented--grid" role="tablist" aria-label="对比模式">
               <button id="modeAbsolute" class="segmented-item is-active" type="button" role="tab" aria-selected="true">
                 原始值
               </button>
               <button id="modeIndexed" class="segmented-item" type="button" role="tab" aria-selected="false">
-                指数化（区间起点=100）
+                指数化（=100）
+              </button>
+              <button id="modeYoy" class="segmented-item" type="button" role="tab" aria-selected="false">
+                同比Δ
+              </button>
+              <button id="modeCumulative" class="segmented-item" type="button" role="tab" aria-selected="false">
+                相对区间起点Δ
               </button>
             </div>
-            <div class="hint">指数化帮助比较“趋势形状”，不被量级差异掩盖。</div>
+            <div class="hint">
+              同比：相邻有数据年份的差分；相对区间起点：刷选区间内该国首年作基准的偏离；指数化：区间内首有效值为 100。
+            </div>
           </div>
 
           <div class="control">
             <div class="label">显示选项</div>
             <label class="check">
-              <input id="chkKyoto" type="checkbox" checked />
-              <span>标注 2005（京都议定书生效）</span>
+              <input id="chkPolicyEvents" type="checkbox" checked />
+              <span>政策与宏观事件（竖线/标签；缩略图底部三角；点击可聚焦到事件前后）</span>
             </label>
             <label class="check">
               <input id="chkPoints" type="checkbox" />
               <span>显示数据点</span>
             </label>
           </div>
+
+          <div class="divider"></div>
+
+          <div class="panel-subtitle">相似国家探索</div>
+          <p class="hint">
+            在当前刷选时间区间内，用<strong>皮尔森相关系数</strong>衡量各国与锚点排放曲线的相似度（仅统计两国均有数据的年份，至少 4 年）。
+          </p>
+          <div class="control">
+            <label class="label" for="anchorCountry">参考国家（锚点）</label>
+            <select id="anchorCountry" class="input input-select" aria-label="相似度参考锚点国家"></select>
+          </div>
+          <button id="btnFindSimilar" class="btn" type="button">查找 Top 8 相似国家</button>
+          <div id="similarResults" class="similar-results" aria-live="polite"></div>
 
           <div class="divider"></div>
 
@@ -111,10 +132,16 @@
           <svg id="rankSvg" class="chart-svg chart-svg--rank" role="img" aria-label="区间变化排行条形图"></svg>
 
           <div class="divider"></div>
+          <div class="panel-subtitle">关注点解释</div>
+          <div id="attentionPanel" class="attention-panel" aria-live="polite">
+            <p class="attention-placeholder">在主图中悬停或点击<strong>空心圆关注点</strong>（红：异常波动；蓝：显著变化），此处将显示解释。</p>
+          </div>
+
+          <div class="divider"></div>
           <div class="panel-subtitle">小提示</div>
           <ul class="tips">
             <li>在主图中悬停可显示“同一年”的多国对齐值与排序。</li>
-            <li>使用“指数化”更容易识别拐点与异常波动。</li>
+            <li>开启「政策与宏观事件」后，可点击竖线热区将刷选缩到事件前后；空心圆为异常/显著变化关注点。</li>
             <li>刷选区间后，右侧会自动给出区间变化的正负方向与强度。</li>
           </ul>
         </aside>
