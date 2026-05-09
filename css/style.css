@@ -560,6 +560,18 @@ select.input-select option{
   border-radius: 12px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.04);
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .16s ease;
+}
+.attention-panel.is-pinned{
+  border-color: rgba(141, 211, 255, 0.52);
+  background:
+    linear-gradient(180deg, rgba(141, 211, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 0 0 1px rgba(141, 211, 255, 0.14) inset,
+    0 0 0 4px rgba(141, 211, 255, 0.08),
+    0 14px 28px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
 }
 .attention-placeholder{
   margin: 0;
@@ -613,6 +625,24 @@ select.input-select option{
   margin: 0;
   font-family: var(--mono);
   color: rgba(255, 255, 255, 0.88);
+}
+.attention-actions{
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+.attention-clear-btn{
+  border: 1px solid rgba(141, 211, 255, 0.38);
+  background: rgba(141, 211, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.attention-clear-btn:hover{
+  background: rgba(141, 211, 255, 0.2);
 }
 .brush .selection{
   fill: rgba(141,211,255,.16);

@@ -52,8 +52,12 @@ const App = (() => {
     brushDomain: null, // [y0, y1] in years; null means full
     hoverYear: null,
     hoverCountry: null,
-    /** 关注点解释面板当前聚焦：{ country, year }，与 attentionKeyed 键一致 */
-    attentionFocus: null,
+    /** 关注点解释面板当前悬停：{ country, year }，与 attentionKeyed 键一致 */
+    attentionHover: null,
+    /** 关注点解释面板当前固定：{ country, year }，点击后保持显示 */
+    attentionPinned: null,
+    /** 记录当前鼠标是否仍在主图上，避免离开时误清空固定关注点 */
+    focusPointerInside: false,
     yearRanks: new Map(),
     attentionKeyed: new Map(),
     attentionList: [],
@@ -580,7 +584,8 @@ const App = (() => {
   function renderAttentionPanel() {
     const panel = el.attentionPanel;
     if (!panel) return;
-    const f = state.attentionFocus;
+    const f = state.attentionPinned ?? state.attentionHover;
+    panel.classList.toggle("is-pinned", Boolean(state.attentionPinned));
     if (!f) {
       panel.innerHTML =
         "<p class=\"attention-placeholder\">在主图中悬停或点击<strong>空心圆关注点</strong>（红：异常波动；蓝：显著变化），此处将显示解释。</p>";
@@ -613,6 +618,7 @@ const App = (() => {
     panel.innerHTML = `
       <div class="attention-head">
         <span class="attention-badge attention-badge--${pt.kind}">${typeLabel}</span>
+        ${state.attentionPinned ? '<span class="attention-badge attention-badge--pinned">已固定</span>' : ""}
         <span class="attention-title">${pt.country} · ${pt.year}</span>
       </div>
       <p class="attention-why">${why}</p>
@@ -627,7 +633,22 @@ const App = (() => {
         }</dd>
         <dt>本国年度变化均值 ± 2σ</dt><dd>${fmtDelta(pt.mean)} ± 2×${sigmaStr} → 阈值带 ${band}</dd>
       </dl>
+      ${
+        state.attentionPinned
+          ? '<div class="attention-actions"><button type="button" class="attention-clear-btn" id="attentionClearBtn">取消固定</button></div>'
+          : ""
+      }
     `;
+
+    const clearBtn = panel.querySelector("#attentionClearBtn");
+    if (clearBtn) {
+      clearBtn.addEventListener("click", () => {
+        state.attentionPinned = null;
+        state.attentionHover = null;
+        renderAttentionPanel();
+        renderAll();
+      });
+    }
   }
 
   function findNearestAttentionPoint(mx, my, xScale, yScale, selected, xDomain) {
@@ -854,13 +875,15 @@ const App = (() => {
 
       // prepare series for drawing
       const series = selected.map((country) => {
-        const arr = state.byCountry.get(country) ?? [];
-        const points = arr.map((d) => ({
-          country,
-          year: d.year,
-          value: d.value,
-          tvalue: d.value == null ? null : transformValue(country, d.year, d.value),
-        }));
+        const arr = state.definedByCountry.get(country) ?? [];
+        const points = arr
+          .map((d) => ({
+            country,
+            year: d.year,
+            value: d.value,
+            tvalue: transformValue(country, d.year, d.value),
+          }))
+          .filter((d) => d.tvalue != null);
         return { country, points };
       });
 
@@ -890,6 +913,8 @@ const App = (() => {
         )
         .filter((p) => transformValue(p.country, p.year, p.currValue) != null);
 
+      const activeAttKey = state.attentionPinned ?? state.attentionHover;
+
       attentionG
         .selectAll("circle.attention-dot")
         .data(attData, (d) => `${d.country}|${d.year}`)
@@ -908,7 +933,32 @@ const App = (() => {
         )
         .attr("cx", (d) => x(d.year))
         .attr("cy", (d) => y(transformValue(d.country, d.year, d.currValue)))
-        .style("pointer-events", "none");
+        .style("pointer-events", "all")
+        .style("cursor", "pointer")
+        .classed("is-active", (d) => activeAttKey?.country === d.country && activeAttKey?.year === d.year)
+        .on("mouseenter", (event, d) => {
+          state.focusPointerInside = true;
+          state.attentionHover = { country: d.country, year: d.year };
+          renderAttentionPanel();
+        })
+        .on("mouseleave", () => {
+          state.focusPointerInside = false;
+          if (!state.attentionPinned) {
+            state.attentionHover = null;
+            renderAttentionPanel();
+          }
+        })
+        .on("click", (event, d) => {
+          event.stopPropagation();
+          const next = { country: d.country, year: d.year };
+          const samePinned =
+            state.attentionPinned &&
+            state.attentionPinned.country === next.country &&
+            state.attentionPinned.year === next.year;
+          state.attentionPinned = samePinned ? null : next;
+          state.attentionHover = next;
+          renderAttentionPanel();
+        });
 
       // points
       pointsG.selectAll("*").remove();
@@ -936,6 +986,7 @@ const App = (() => {
         const year = Math.round(x.invert(mx));
         const clamped = Math.max(xDomain[0], Math.min(xDomain[1], year));
         state.hoverYear = clamped;
+        state.focusPointerInside = true;
 
         const activeCountries = selected.filter((c) => !state.hidden.has(c));
         const nearestAtt = findNearestAttentionPoint(mx, my, x, y, activeCountries, xDomain);
@@ -943,9 +994,12 @@ const App = (() => {
           const k = `${nearestAtt.country}|${nearestAtt.year}`;
           if (k !== lastAttentionHoverKey) {
             lastAttentionHoverKey = k;
-            state.attentionFocus = { country: nearestAtt.country, year: nearestAtt.year };
+            state.attentionHover = { country: nearestAtt.country, year: nearestAtt.year };
             renderAttentionPanel();
           }
+        } else if (!state.attentionPinned && state.attentionHover) {
+          state.attentionHover = null;
+          renderAttentionPanel();
         }
 
         const rows = [];
@@ -984,15 +1038,22 @@ const App = (() => {
         const nearestAtt = findNearestAttentionPoint(mx, my, x, y, activeCountries, xDomain);
         if (nearestAtt) {
           event.stopPropagation();
-          state.attentionFocus = { country: nearestAtt.country, year: nearestAtt.year };
+          const next = { country: nearestAtt.country, year: nearestAtt.year };
+          const samePinned =
+            state.attentionPinned &&
+            state.attentionPinned.country === next.country &&
+            state.attentionPinned.year === next.year;
+          state.attentionPinned = samePinned ? null : next;
+          state.attentionHover = next;
           renderAttentionPanel();
         }
       });
 
       overlay.on("mouseleave", () => {
         state.hoverYear = null;
+        state.focusPointerInside = false;
         lastAttentionHoverKey = null;
-        state.attentionFocus = null;
+        if (!state.attentionPinned) state.attentionHover = null;
         renderAttentionPanel();
         crosshair.style("opacity", 0);
         hoverG.selectAll("circle").remove();
